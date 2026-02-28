@@ -10,7 +10,9 @@ AutoClicker Premium lets you automate mouse clicks at any speed, on any screen p
 
 ---
 
-## Features
+<details>
+<summary><strong>Features</strong></summary>
+<br>
 
 ### Clicking
 - **Left, right, or middle** mouse button
@@ -47,6 +49,8 @@ AutoClicker Premium lets you automate mouse clicks at any speed, on any screen p
 - **Local profile saving** — save and reload position configurations, stored locally on disk
 - **Click animation overlay** — visual pulse indicator when the clicker is active
 - **Frameless custom UI** with a Windows 11-style dark theme and custom title bar
+
+</details>
 
 ---
 
