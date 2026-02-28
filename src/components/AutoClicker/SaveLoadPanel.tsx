@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, FolderOpen, Trash2, Plus, Check, X, Cloud, CloudOff, AlertTriangle } from 'lucide-react';
+import { Save, FolderOpen, Trash2, Plus, Check, X, HardDrive, HardDriveDownload, AlertTriangle } from 'lucide-react';
 import { useSavedLocations, SavedProfile } from '@/hooks/useSavedLocations';
 import type { ClickPosition, PositionCategory } from './types';
 import { toast } from '@/components/ui/sonner';
@@ -116,7 +116,7 @@ const SaveLoadPanel = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <Cloud className="w-5 h-5 text-primary" />
+            <HardDrive className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Saved Profiles</h2>
           </div>
           <button
@@ -179,7 +179,7 @@ const SaveLoadPanel = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2 px-1">
               <FolderOpen className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Cloud Profiles</span>
+              <span className="text-sm font-medium text-foreground">Local Profiles</span>
               {profiles.length > 0 && (
                 <span className="text-xs text-muted-foreground">({profiles.length})</span>
               )}
@@ -192,15 +192,15 @@ const SaveLoadPanel = ({
               </div>
             ) : error ? (
               <div className="text-center py-8">
-                <CloudOff className="w-8 h-8 text-destructive mx-auto mb-2" />
+                <HardDriveDownload className="w-8 h-8 text-destructive mx-auto mb-2" />
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             ) : profiles.length === 0 ? (
               <div className="text-center py-8">
-                <Cloud className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+                <HardDrive className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
                 <p className="text-sm text-muted-foreground">No saved profiles yet</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">
-                  Add positions and save them to Cloud
+                  Add positions and save them locally
                 </p>
               </div>
             ) : (
@@ -224,7 +224,7 @@ const SaveLoadPanel = ({
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mb-3">
-                          This action cannot be undone. The profile will be permanently deleted from Cloud.
+                          This action cannot be undone. The profile will be permanently deleted.
                         </p>
                         <div className="flex items-center gap-2 justify-end">
                           <button
@@ -276,7 +276,7 @@ const SaveLoadPanel = ({
         {/* Footer */}
         <div className="p-4 border-t border-border/50 bg-muted/20">
           <p className="text-xs text-muted-foreground text-center">
-            Profiles are synced to Cloud automatically
+            Profiles saved locally in AppData\Roaming\ThomasThanos\AutoClicker
           </p>
         </div>
       </div>

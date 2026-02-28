@@ -1,73 +1,164 @@
-# Welcome to your Lovable project
+# AutoClicker Premium
 
-## Project info
+> A fast, precise and fully configurable auto-clicker for Windows — built with Electron & React.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## What it does
 
-There are several ways of editing your application.
+AutoClicker Premium lets you automate mouse clicks at any speed, on any screen position, with full control over timing, button, click type, and repeat behavior. It runs as a native Windows desktop app with a clean dark UI and works globally — even when the window is not in focus.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Features
 
-Changes made via Lovable will be committed automatically to this repo.
+### Clicking
+- **Left, right, or middle** mouse button
+- **Single or double** click
+- **Minimum interval floor of 80ms** to keep the system stable
 
-**Use your preferred IDE**
+### Timing
+- Set interval with **hours / minutes / seconds / milliseconds**
+- **Random interval mode** — randomizes timing between a min and max range to simulate human behavior
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Repeat
+- **Until stopped** — runs indefinitely until you press stop
+- **Repeat X times** — stops automatically after a set number of clicks
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Location
+| Mode | Description |
+|------|-------------|
+| Current position | Clicks wherever your cursor is |
+| Fixed position | Always clicks at one specific saved coordinate |
+| Multi-position | Cycles through a list of coordinates in order |
 
-Follow these steps:
+### Multi-Position & Categories
+- Organize positions into **4 independent categories**, each can be enabled or disabled
+- Set **clicks per position** — how many times to click at each coordinate before moving on
+- **Category 4** supports a custom repeat count per individual position
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Hotkeys
+- **Start / Stop** — works globally even when the app is minimized or behind other windows
+- **Emergency Stop** — instantly halts all clicking
+- Both hotkeys are **fully remappable** from the Settings panel
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Other
+- **Always on top** toggle — keeps the app visible above all other windows
+- **Local profile saving** — save and reload position configurations, stored locally on disk
+- **Click animation overlay** — visual pulse indicator when the clicker is active
+- **Frameless custom UI** with a Windows 11-style dark theme and custom title bar
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## How it works
+
+### Click Engine (Main Process)
+
+The clicker runs in the **Electron main process**, not in the browser renderer. This gives it two key advantages:
+
+1. Clicks continue even when the app window loses focus
+2. Global hotkeys (via Electron's `globalShortcut`) work system-wide at all times
+
+Mouse events are sent through a **persistent PowerShell runspace** that stays alive for the entire session. Commands are piped via stdin instead of spawning a new process per click — eliminating the 50–200ms startup overhead of a fresh PowerShell instance.
+
+### Timing
+
+The engine calculates the next interval **after** each click finishes, not before. This prevents overlapping clicks and keeps timing accurate at high speeds. A minimum floor of **80ms** is enforced between clicks.
+
+### Multi-Position Cycling
+
+In multi-position mode, the engine tracks a position index. After completing the required clicks at the current position it moves to the next. When all positions are done:
+- **Until stopped** → loops back to position 0
+- **Repeat X times** → stops after one full cycle
+
+### Data Storage
+
+Everything is stored locally — no cloud, no account needed:
+
+```
+%APPDATA%\ThomasThanos\AutoClicker\
+├── device_id.txt     — unique device identifier
+└── profiles.json     — saved position profiles
+```
+
+---
+
+## Hotkeys
+
+| Key | Action |
+|-----|--------|
+| `F6` *(default)* | Start / Stop |
+| `F7` *(default)* | Emergency Stop |
+
+Configurable from the Settings panel inside the app.
+
+---
+
+## Getting Started
+
+### Requirements
+- Windows 10 / 11
+- Node.js 18+
+- npm
+
+### Install
+
+```bash
+npm install
+```
+
+### Development
+
+Starts Vite and Electron together:
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Build
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Kills any running Electron process, builds the app, and packages it as a Windows portable `.exe`:
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Output goes to the `release/` folder.
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## Tech Stack
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Layer | Technology |
+|-------|-----------|
+| Desktop shell | Electron |
+| UI | React + TypeScript |
+| Bundler | Vite |
+| Styling | Tailwind CSS + shadcn/ui |
+| Mouse control | PowerShell (`mouse_event` Win32 API) |
+| Packaging | electron-builder |
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Project Structure
 
-## Can I connect a custom domain to my Lovable project?
+```
+autoclicker/
+├── electron/
+│   ├── main.cjs          # Main process — clicker engine, IPC handlers, hotkeys, local storage
+│   └── preload.cjs       # Exposes safe APIs to the renderer via contextBridge
+├── src/
+│   ├── components/
+│   │   └── AutoClicker/  # All UI components (settings, panels, stats, etc.)
+│   ├── hooks/
+│   │   ├── useAppSettings.ts      # App settings persistence
+│   │   ├── useDeviceId.ts         # Device ID (stored in AppData)
+│   │   └── useSavedLocations.ts   # Profile save / load via Electron IPC
+│   └── main.tsx
+├── electron-builder.json
+└── package.json
+```
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Author:** ThomasThanos / Kolokithes A.E.
