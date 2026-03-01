@@ -554,9 +554,21 @@ const createWindow = () => {
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
   
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
-    // Open DevTools in development
-    // mainWindow.webContents.openDevTools({ mode: 'detach' });
+    // Wait for Vite dev server to be ready before loading
+    const tryLoadURL = (retries = 20, delay = 500) => {
+      const http = require('http');
+      http.get('http://localhost:8080', () => {
+        mainWindow.loadURL('http://localhost:8080');
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+      }).on('error', () => {
+        if (retries > 0) {
+          setTimeout(() => tryLoadURL(retries - 1, delay), delay);
+        } else {
+          mainWindow.loadURL('http://localhost:8080');
+        }
+      });
+    };
+    tryLoadURL();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }

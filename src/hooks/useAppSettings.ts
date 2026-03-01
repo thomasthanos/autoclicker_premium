@@ -1,35 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useDeviceId } from './useDeviceId';
 import type { MouseButton } from '@/components/AutoClicker/MouseButtonSelect';
 import type { ClickType } from '@/components/AutoClicker/ClickTypeSelect';
 import type { RepeatMode } from '@/components/AutoClicker/RepeatSettings';
 import type { LocationMode } from '@/components/AutoClicker/LocationSettings';
-import type { Json } from '@/integrations/supabase/types';
 
 export interface AppSettings {
-  // Interval
   hours: number;
   minutes: number;
   seconds: number;
   milliseconds: number;
-  // Random interval
   randomEnabled: boolean;
   randomMin: number;
   randomMax: number;
-  // Mouse
   mouseButton: MouseButton;
   clickType: ClickType;
-  // Repeat
   repeatMode: RepeatMode;
   repeatCount: number;
-  // Location
   locationMode: LocationMode;
   clicksPerPosition: number;
-  // Hotkeys
   startStopKey: string;
   emergencyStopKey: string;
 }
+
+const SETTINGS_KEY = 'autoclicker_settings';
 
 const defaultSettings: AppSettings = {
   hours: 0,
@@ -50,113 +43,47 @@ const defaultSettings: AppSettings = {
 };
 
 export const useAppSettings = () => {
-  const deviceId = useDeviceId();
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isInitializedRef = useRef(false);
 
-  // Fetch settings from cloud
-  const fetchSettings = useCallback(async () => {
-    if (!deviceId) return;
-    
-    setLoading(true);
-    
+  // Load settings from localStorage on mount
+  useEffect(() => {
     try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('settings')
-        .eq('device_id', deviceId)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      if (data?.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)) {
-        const cloudSettings = data.settings as Record<string, Json>;
-        setSettings(prev => ({
-          ...prev,
-          ...(cloudSettings as unknown as Partial<AppSettings>),
-        }));
+      const stored = localStorage.getItem(SETTINGS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setSettings(prev => ({ ...prev, ...parsed }));
       }
-      
-      isInitializedRef.current = true;
     } catch (err) {
-      console.error('Error fetching settings:', err);
-      isInitializedRef.current = true;
+      console.error('Error loading settings:', err);
     } finally {
       setLoading(false);
     }
-  }, [deviceId]);
+  }, []);
 
-  // Save settings to cloud (debounced)
-  const syncSettings = useCallback(async (newSettings: AppSettings) => {
-    if (!deviceId || !isInitializedRef.current) return;
-    
-    setSyncing(true);
-    
-    try {
-      // First check if a record exists
-      const { data: existing } = await supabase
-        .from('app_settings')
-        .select('id')
-        .eq('device_id', deviceId)
-        .maybeSingle();
-
-      if (existing) {
-        // Update existing record
-        const { error } = await supabase
-          .from('app_settings')
-          .update({
-            settings: newSettings as unknown as Json,
-          })
-          .eq('device_id', deviceId);
-
-        if (error) throw error;
-      } else {
-        // Insert new record
-        const { error } = await supabase
-          .from('app_settings')
-          .insert({
-            device_id: deviceId,
-            settings: newSettings as unknown as Json,
-          });
-
-        if (error) throw error;
-      }
-    } catch (err) {
-      console.error('Error syncing settings:', err);
-    } finally {
-      setSyncing(false);
-    }
-  }, [deviceId]);
-
-  // Update settings with debounced sync
+  // Update settings with debounced save to localStorage
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
     setSettings(prev => {
       const newSettings = { ...prev, ...updates };
-      
-      // Debounce the sync
+
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      
+
       saveTimeoutRef.current = setTimeout(() => {
-        syncSettings(newSettings);
-      }, 1000); // Sync after 1 second of no changes
-      
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
+        } catch (err) {
+          console.error('Error saving settings:', err);
+        }
+      }, 500);
+
       return newSettings;
     });
-  }, [syncSettings]);
+  }, []);
 
-  // Fetch settings on mount
-  useEffect(() => {
-    if (deviceId) {
-      fetchSettings();
-    }
-  }, [deviceId, fetchSettings]);
-
-  // Cleanup timeout on unmount
+  // Cleanup
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -168,8 +95,8 @@ export const useAppSettings = () => {
   return {
     settings,
     loading,
-    syncing,
+    syncing: false,
     updateSettings,
-    refreshSettings: fetchSettings,
+    refreshSettings: () => {},
   };
 };

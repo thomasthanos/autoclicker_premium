@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "AutoClicker Pro - Windows 11 Edition",
   "author": "ThomasThanos",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "cls && concurrently \"vite\" \"electron .\"",
